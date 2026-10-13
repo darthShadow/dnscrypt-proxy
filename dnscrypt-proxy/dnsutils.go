@@ -202,9 +202,18 @@ func NormalizeQName(str string) (string, error) {
 	return b.String(), nil
 }
 
+func hasSOA(records []dns.RR) bool {
+	for _, rr := range records {
+		if dns.RRToType(rr) == dns.TypeSOA {
+			return true
+		}
+	}
+	return false
+}
+
 func getMinTTL(msg *dns.Msg, minTTL uint32, maxTTL uint32, cacheNegMinTTL uint32, cacheNegMaxTTL uint32) time.Duration {
 	if (msg.Rcode != dns.RcodeSuccess && msg.Rcode != dns.RcodeNameError) ||
-		(len(msg.Answer) <= 0 && len(msg.Ns) <= 0) {
+		(len(msg.Answer) <= 0 && !hasSOA(msg.Ns)) {
 		return time.Duration(cacheNegMinTTL) * time.Second
 	}
 	var ttl uint32
